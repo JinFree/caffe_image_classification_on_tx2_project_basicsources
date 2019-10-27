@@ -1,13 +1,28 @@
 import caffe
 import cv2
 import numpy as np
-
+caffe.set_mode_gpu()
 
 def open_caffe_files():
+    ARCHITECTURE = './AlexNet/alexnet_deploy.prototxt'
+    WEIGHTS = './AlexNet/bvlc_alexnet.caffemodel'
+    MEAN_IMAGE = './AlexNet/ilsvrc_2012_mean.npy'
+    LABEL_FILE = './AlexNet/imagenet_2012_classes.txt'
+    net = caffe.Classifier(ARCHITECTURE, \
+                           WEIGHTS,  \
+                           channel_swap =(2, 1, 0), #Color images have three channels, Red, Green, and Blue.
+                           raw_scale=255) #Each pixel value is a number between 0 and 255
+    dst_size = (227, 227)  #Each "channel" of our images are 227 x 227 (for alexnet)
+    mean_image = np.load(MEAN_IMAGE)
+    labels = np.loadtxt(labels_file, str, delimiter='\t')
+    return net, mean_image, labels, dst_size
 
-
-def frameProcessing(frame):
+def frameProcessing(frame, net, mean_image, labels, dst_size):
     output = np.copy(frame)
+    resize = cv2.resize(frame, dst_size) - mean_image
+    prediction = net.predict([resize])
+    image_class = labels[prediction.argmax()]
+    print(image_class)
     return output
 
 def gstreamer_camera_string(camera_num):
@@ -22,6 +37,7 @@ def video_function(video_input_info, savepath=False):
         print("Video Not Opened")
         print("Program Abort")
         exit()
+    net, mean_image, labels, dst_size = open_caffe_files()
     fps = cap.get(cv2.CAP_PROP_FPS)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -36,7 +52,7 @@ def video_function(video_input_info, savepath=False):
         ret, frame = cap.read()
         if ret:
             # Our operations on the frame come here
-            output = cl.frameProcessing(frame)
+            output = cl.frameProcessing(frame, net, mean_image, labels, dst_size)
             if savepath is True:
                 # Write frame-by-frame
                 out.write(output)
@@ -54,3 +70,7 @@ def video_function(video_input_info, savepath=False):
         out.release()
     cv2.destroyAllWindows()
     return
+
+if __name__ == '__main__':
+    camera = gstreamer_camera_string(1)
+    video_function('1')
