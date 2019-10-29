@@ -5,18 +5,28 @@ import numpy as np
 
 def open_caffe_files():
     caffe.set_mode_gpu()
-    ARCHITECTURE = './AlexNet/alexnet_deploy.prototxt'
-    WEIGHTS = './AlexNet/bvlc_alexnet.caffemodel'
-    MEAN_IMAGE = './AlexNet/ilsvrc_2012_mean.npy'
-    LABEL_FILE = './AlexNet/imagenet_2012_classes.txt'
-    dst_size = (227, 227)
+    ###
+    ## ImageNet AlexNet Classification Demo
+    #ARCHITECTURE = './AlexNet/alexnet_deploy.prototxt'
+    #WEIGHTS = './AlexNet/bvlc_alexnet.caffemodel'
+    #MEAN_IMAGE = './AlexNet/ilsvrc_2012_mean.npy'
+    #LABEL_FILE = './AlexNet/imagenet_2012_classes.txt'
+    #dst_size = (227, 227)
+    #mean_image = np.load(MEAN_IMAGE)
+    #mean_image = mean_image.mean(1).mean(1)
+    
+    ## Thresh AlexNet Classification
+    ARCHITECTURE = './model/deploy.prototxt'
+    WEIGHTS = './model/model.caffemodel'
+    MEAN_IMAGE = './model/mean.jpg'
+    LABEL_FILE = './model/classes.txt'
+    dst_size = (256, 256)
+    mean_image = cv2.imread(MEAN_IMAGE)
+    mean_image = mean_image.mean(0).mean(0)
+    ###
     net = caffe.Classifier(ARCHITECTURE,
                            WEIGHTS,
                            image_dims=dst_size)
-
-    mean_image = np.load(MEAN_IMAGE)
-    mean_image = mean_image.mean(1).mean(1)
-    #mean_image = cv2.imread(MEAN_IMAGE)
 
     labels = np.loadtxt(LABEL_FILE, str, delimiter='\t')
     return net, mean_image, labels, dst_size
